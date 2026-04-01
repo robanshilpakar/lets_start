@@ -1,0 +1,76 @@
+
+----- missing dumps/screenshots in SEO table --- dumpfail --
+@set scraper_id = '5e615b1d-66fd-420d-90df-755de54fef15'
+@set search_region = 'Detroit,Michigan,United States'  ---city leve
+@set search_date = '2026-02-25' --- for fast
+@set run_id = '928b9f76-cac7-4d7f-b177-1b36ee65e330'
+
+WITH RECURSIVE number_series(key_id, a) AS (
+    SELECT 
+        --804
+    (with cte as(
+ SELECT DISTINCT 
+           client, 
+           dataflow_name,  search_region, 
+           serp_widget_screenshot, run_id,
+           split_part(serp_widget_screenshot, '/', 9) AS part,
+           split_part(split_part(serp_widget_screenshot, '/', 9), '.', 1)::INTEGER AS key_id
+    FROM pla.fact_cai_seo
+    where 1=1 
+    and serp_widget_screenshot= 'https://daf.growbydata.com:8000/daf-xtend/prod/projects/'||${scraper_id}||'/screenshots/'||key_id||''
+      AND search_region = ${search_region}
+      AND search_date = ${search_date}
+      and run_id = ${run_id}
+      order by key_id
+) 
+select min(key_id) from cte) 
+        , 'https://daf.growbydata.com:8000/daf-xtend/prod/projects/'||${scraper_id}||'/screenshots/'||1000||''
+    UNION ALL
+    SELECT 
+        key_id + 1, 'https://daf.growbydata.com:8000/daf-xtend/prod/projects/'||${scraper_id}||'/screenshots/'||key_id+1||''
+    FROM number_series
+    WHERE key_id < (with cte as(
+ SELECT DISTINCT 
+           client, 
+           dataflow_name,  
+           serp_widget_screenshot, run_id,
+           split_part(serp_widget_screenshot, '/', 9) AS part,
+           split_part(split_part(serp_widget_screenshot, '/', 9), '.', 1)::INTEGER AS key_id
+    FROM pla.fact_cai_seo
+    WHERE 1 = 1
+    and serp_widget_screenshot= 'https://daf.growbydata.com:8000/daf-xtend/prod/projects/'||${scraper_id}||'/screenshots/'||key_id||''
+      AND search_region = ${search_region}
+      AND search_date = ${search_date}
+      and run_id = ${run_id}
+      order by key_id
+) 
+select min(key_id) from cte) -1+
+--403
+(select distinct keyword_count  from pla.run_details  fcs 
+where run_id = ${run_id})
+)
+SELECT ns.key_id, ns.a,
+       fcs.client,
+       fcs.dataflow_name,
+       fcs.run_id,
+       fcs.serp_widget_screenshot,
+       fcs.part
+FROM number_series ns
+LEFT JOIN (
+    SELECT DISTINCT 
+           client, 
+           dataflow_name,  
+           serp_widget_screenshot, run_id,
+           split_part(serp_widget_screenshot, '/', 9) AS part,
+           split_part(split_part(serp_widget_screenshot, '/', 9), '.', 1)::INTEGER AS key_id
+    FROM pla.fact_cai_seo
+    WHERE 1 = 1
+    and serp_widget_screenshot= 'https://daf.growbydata.com:8000/daf-xtend/prod/projects/'||${scraper_id}||'/screenshots/'||key_id||''
+      AND search_region = ${search_region}
+      AND search_date = ${search_date}
+      and run_id = ${run_id}
+      order by key_id
+) fcs
+ON ns.key_id = fcs.key_id
+where client is null
+ORDER BY ns.key_id;
