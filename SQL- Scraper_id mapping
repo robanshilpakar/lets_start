@@ -1,0 +1,40 @@
+-------Scraper_id mapping
+select --*
+distinct  t1.run_id as prev_run_id, t1.scraper_id as prev_scraper_id, t1.scraper_base_ip, t2.run_id as lts_run_id, t2.scraper_id as lts_scraper_id
+from 
+(
+select * from (
+(select distinct search_date,location, search_hour ,run_type , device, run_id from pla.run_details rd 
+where dataflow_name = 'Merkle_Ashley_Paid_SEO_PLA'
+and run_type = 'SEO'
+and search_date::date = '2026-03-16' -- previous
+order by run_type ,search_hour , "location" 
+)
+left join
+(select distinct run_id ,region as "location", scraper_id, scraper_base_ip,
+case when scheme like '%Mobile%' then 'mobile' else 'desktop' end as device
+from pla.cai_scraper_info csi )
+using (run_id, "location", device )
+) 
+order by run_id, search_hour
+) t1
+left join
+(
+select * from (
+(select distinct search_date,location, search_hour ,run_type , device, run_id   from pla.run_details rd 
+where dataflow_name = 'Merkle_Ashley_Paid_SEO_PLA'
+and run_type = 'SEO'
+and search_date::date = '2026-03-17' --present
+order by run_type ,search_hour , "location" 
+)
+left join
+(select distinct run_id , region as "location", scraper_id, scraper_base_ip,
+case when scheme like '%Mobile%' then 'mobile' else 'desktop' end as device
+from pla.cai_scraper_info csi )
+using (run_id, "location", device )
+) 
+order by run_id, search_hour
+) t2
+using ("Location",device, search_hour, run_type)
+
+
