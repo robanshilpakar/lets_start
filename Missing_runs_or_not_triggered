@@ -1,0 +1,39 @@
+ select t1.client , t1.search_hour::int, t1.run_type, t1.dataflow_id , t1.dataflow_name, t1.client_of, t1.Search_date as refer_date, current_date-1 as search_date, t1.cn, t2.cn from(
+select client , Search_date::date, search_hour::int, run_type, dataflow_id , dataflow_name, client_of, 
+client || search_hour::int || run_type || dataflow_id ||dataflow_name || client_of as ky, 
+count(*) cn from pla.run_details rd 
+where search_date::date = (case when client = 'Merkle' then current_date -2 - 11 --else  '2025-06-14' 
+ when client = 'Bank of America' then current_date -2 - 11 
+ when client = 'Sunday Natural' and dataflow_id not in (2144, 2145) then current_date -2 - 6
+ when client = 'McaAfee' then current_date -2 - 11 
+ when client = 'Dentsu' then current_date -2 - 11 --else  '2025-06-14' 
+ when client = 'Etsy' and dataflow_id not in (2065, 2067) then current_date -2 - 5 --else  '2025-06-14' 
+ when client = 'Vertx'  then current_date -2 - 4 
+ when client = 'Vimeo'  then current_date -2 - 8 
+ when client = 'McaAfee'  then current_date -2 - 11 
+ when client = 'Vertx'  then current_date -2 - 4 
+ when client = 'BJs Wholesale'  then current_date -2 - 7
+ when client = 'Elwood Clothing'  then current_date -2 - 1 
+ when client = 'GrowByData SEO'  then current_date -2 - 6 
+ when client = 'Capify'  then current_date -2 - 2 
+  when client = 'Netskope'  then current_date -2 - 6
+ when client = 'American Express' and dataflow_id not in (1895) then current_date -2 - 11
+ when client = 'Salesforce'  then current_date -2 - 11 else  current_date -2
+end)
+--and dataflow_id::int not between '2012' and '2039' and dataflow_id = '2041' and dataflow_id not between '2061' and '2069'
+and run_type <> 'Affiliate'
+group by 1,2,3,4,5,6,7,8
+) t1
+left join 
+(
+select client , Search_date::date, search_hour::int, run_type, dataflow_id , dataflow_name, client_of, 
+client || search_hour::int || run_type || dataflow_id ||dataflow_name || client_of as ky, 
+count(*) cn from pla.run_details rd 
+where search_date::date = current_date - 1
+and run_type <> 'Affiliate'
+--and dataflow_id::int not between '2012' and '2039' and dataflow_id = '2041' and dataflow_id not between '2061' and '2069'
+group by 1,2,3,4,5,6,7,8
+) t2
+using (ky)
+where (t1.cn <> t2.cn or t2.search_date is null)
+order by client;
