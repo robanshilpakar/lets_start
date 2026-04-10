@@ -1,0 +1,11 @@
+select distinct tags, value from (
+select serp_widget_screenshot, tags
+,right(tags, len(tags) - position ('"Annotation_tag": "' in tags)- len('"Annotation_tag": "')+1)	as fn
+, split_part(fn, ',', 1) as value 
+from pla.fact_cai_seo fcs 
+where --serp_widget_screenshot ='https://daf.growbydata.com:8000/daf-classic/us/projects/673ed71a644a965ca4999dab/screenshots/15.jpeg?file_expiry=90'
+ tags ~ 'Annotation_tag'
+and  search_date >= current_date - 1
+and tags ~ '1.5 mi away'
+)
+where value ~ 'Columbia"'
